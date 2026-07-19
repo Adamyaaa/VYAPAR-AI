@@ -1,68 +1,119 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  
-  --color-secondary-50: #eef2ff;
-  --color-secondary-500: #6366f1;
-  --color-secondary-600: #4f46e5;
+  /* Brand */
+  --color-indigo: #4f46e5;
+  --color-indigo-ink: #372fbf;
+  --color-indigo-soft: rgba(79, 70, 229, 0.1);
 
-  --color-accent-red: #ef4444;
-  --color-accent-green: #22c55e;
-  
-  --color-sidebar-bg: #0b0f19;
-  --color-sidebar-hover: #1e293b;
+  /* Semantic */
+  --color-emerald: #0e9f6e;
+  --color-emerald-soft: rgba(14, 159, 110, 0.11);
+  --color-amber: #b8790f;
+  --color-amber-soft: rgba(184, 121, 15, 0.13);
+  --color-rose: #d93b67;
+  --color-rose-soft: rgba(217, 59, 103, 0.11);
+
+  /* Neutrals (hue-biased, not pure grey) */
+  --color-canvas: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-2: #fbfbfe;
+  --color-ink: #11131a;
+  --color-ink-muted: #5b5f6b;
+  --color-ink-faint: #8a8e9b;
+  --color-border: rgba(17, 19, 26, 0.09);
+  --color-border-soft: rgba(17, 19, 26, 0.06);
+
+  /* Radius scale — overrides Tailwind defaults so rounded-sm..xl match the design system */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+
+  /* Shadow scale — soft, low-opacity; overrides Tailwind defaults */
+  --shadow-sm: 0 1px 2px rgba(17, 19, 26, 0.05);
+  --shadow-md: 0 10px 30px -12px rgba(17, 19, 26, 0.16);
+  --shadow-lg: 0 24px 60px -16px rgba(17, 19, 26, 0.22);
+
+  --font-sans: 'InterVariable', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Dark mode: redefine the same tokens under a manually-toggled .dark class on <html>.
+   Every utility above (bg-surface, text-ink-muted, shadow-md, ...) is generated from
+   these custom properties, so it repaints automatically — no dark: variants needed. */
+.dark {
+  --color-indigo: #8783ff;
+  --color-indigo-ink: #c7c5ff;
+  --color-indigo-soft: rgba(135, 131, 255, 0.16);
+
+  --color-emerald: #3fdba0;
+  --color-emerald-soft: rgba(63, 219, 160, 0.14);
+  --color-amber: #f2b84b;
+  --color-amber-soft: rgba(242, 184, 75, 0.14);
+  --color-rose: #fb7299;
+  --color-rose-soft: rgba(251, 114, 153, 0.14);
+
+  --color-canvas: #0a0b10;
+  --color-surface: #14151d;
+  --color-surface-2: #191b25;
+  --color-ink: #ecedf2;
+  --color-ink-muted: #9599a6;
+  --color-ink-faint: #6b6f7b;
+  --color-border: rgba(255, 255, 255, 0.09);
+  --color-border-soft: rgba(255, 255, 255, 0.06);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 10px 30px -12px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 24px 60px -16px rgba(0, 0, 0, 0.65);
 }
 
 :root {
-  font-family: 'Outfit', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  color-scheme: light dark;
 }
 
 body {
   margin: 0;
-  background-color: #f8fafc;
-  background-image: radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.5) 0px, transparent 50%),
-                    radial-gradient(at 50% 0%, rgba(240, 253, 244, 0.5) 0px, transparent 50%),
-                    radial-gradient(at 100% 0%, rgba(244, 243, 255, 0.5) 0px, transparent 50%);
-  background-attachment: fixed;
   min-height: 100vh;
-  color: #0f172a;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Glassmorphism utility classes */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+::selection {
+  background: var(--color-indigo-soft);
 }
 
-.dark .glass-panel {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-border);
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+/* Glassmorphism utility — used sparingly, only where the brief calls for it */
+.glass-panel {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-soft);
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

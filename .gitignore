@@ -17,7 +17,11 @@ node_modules/
 # Build output
 frontend/dist/
 backend/dist/
+backend-node/dist/
 .dist/
+
+# Logs
+*.log
 
 # Editor/OS
 .vscode/
