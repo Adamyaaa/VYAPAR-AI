@@ -1,26 +1,36 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { validateBody } from '../middleware/validate';
+import { validateBody, validateQuery } from '../middleware/validate';
 import { NudgeCreate } from '../schemas/nudge.schema';
+import { PaginationQuery } from '../schemas/pagination.schema';
 import { AppError } from '../utils/AppError';
 
 export const nudgesRouter = Router();
 
-nudgesRouter.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  // Filter by business_id via an inner join on transactions.business_id,
-  // same approach as the FastAPI version.
-  const { data, error } = await req.userSupabase
-    .from('recovery_nudges')
-    .select('*, transactions!inner(business_id)')
-    .eq('transactions.business_id', req.userId);
+nudgesRouter.get(
+  '/',
+  requireAuth,
+  validateQuery(PaginationQuery),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { limit, offset } = req.pagination;
+    // Filter by business_id via an inner join on transactions.business_id,
+    // same approach as the FastAPI version.
+    const { data, error, count } = await req.userSupabase
+      .from('recovery_nudges')
+      .select('*, transactions!inner(business_id)', { count: 'exact' })
+      .eq('transactions.business_id', req.userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  if (error) {
-    return next(new AppError(502, `Failed to fetch nudges from Supabase: ${error.message}`));
+    if (error) {
+      return next(new AppError(502, `Failed to fetch nudges from Supabase: ${error.message}`));
+    }
+
+    const cleaned = (data ?? []).map(({ transactions: _transactions, ...rest }) => rest);
+    res.set('X-Total-Count', String(count ?? cleaned.length));
+    res.json(cleaned);
   }
-
-  const cleaned = (data ?? []).map(({ transactions: _transactions, ...rest }) => rest);
-  res.json(cleaned);
-});
+);
 
 nudgesRouter.post(
   '/',

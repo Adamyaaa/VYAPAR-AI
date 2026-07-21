@@ -16,3 +16,15 @@ export function validateBody(schema: ZodSchema) {
     next();
   };
 }
+
+/** Same as validateBody, but for req.query (e.g. pagination params). */
+export function validateQuery(schema: ZodSchema) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+    if (!result.success) {
+      return res.status(422).json({ detail: result.error.issues });
+    }
+    req.pagination = result.data;
+    next();
+  };
+}

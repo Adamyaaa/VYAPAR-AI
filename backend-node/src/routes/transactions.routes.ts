@@ -1,23 +1,32 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { validateBody } from '../middleware/validate';
+import { validateBody, validateQuery } from '../middleware/validate';
 import { TransactionCreate } from '../schemas/transaction.schema';
+import { PaginationQuery } from '../schemas/pagination.schema';
 import { AppError } from '../utils/AppError';
 
 export const transactionsRouter = Router();
 
-transactionsRouter.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  const { data, error } = await req.userSupabase
-    .from('transactions')
-    .select('*')
-    .eq('business_id', req.userId)
-    .order('created_at', { ascending: false });
+transactionsRouter.get(
+  '/',
+  requireAuth,
+  validateQuery(PaginationQuery),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { limit, offset } = req.pagination;
+    const { data, error, count } = await req.userSupabase
+      .from('transactions')
+      .select('*', { count: 'exact' })
+      .eq('business_id', req.userId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-  if (error) {
-    return next(new AppError(502, `Failed to fetch transactions from Supabase: ${error.message}`));
+    if (error) {
+      return next(new AppError(502, `Failed to fetch transactions from Supabase: ${error.message}`));
+    }
+    res.set('X-Total-Count', String(count ?? data?.length ?? 0));
+    res.json(data);
   }
-  res.json(data);
-});
+);
 
 transactionsRouter.post(
   '/',
