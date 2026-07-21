@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: hisaab-ai-backend
+    runtime: node
+    plan: free
+    rootDir: backend-node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
+      # Set this once you know your Vercel frontend URL (see DEPLOYMENT.md) —
+      # comma-separated if you ever need more than one origin.
+      - key: CORS_ORIGINS
+        sync: false
