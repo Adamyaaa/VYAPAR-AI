@@ -279,6 +279,49 @@ class ApiClient {
     return res.json();
   }
 
+  async updateTransaction(
+    id: string,
+    changes: Partial<Pick<Transaction, 'amount' | 'type' | 'description' | 'status'>>
+  ): Promise<Transaction> {
+    await this.ready;
+    if (this.useMock) {
+      const transactions = await this.getTransactions();
+      const existing = transactions.find(t => t.id === id);
+      if (!existing) throw new Error('Transaction not found');
+      const updated: Transaction = { ...existing, ...changes, updated_at: new Date().toISOString() };
+
+      localStorage.setItem(
+        'hisaab_transactions',
+        JSON.stringify(transactions.map(t => (t.id === id ? updated : t)))
+      );
+
+      // Reverse the old amount/type effect and apply the new one, mirroring the
+      // real backend's balance trigger (0002_customer_balance_trigger.sql).
+      const oldDelta = existing.type === 'CREDIT' ? Number(existing.amount) : -Number(existing.amount);
+      const newDelta = updated.type === 'CREDIT' ? Number(updated.amount) : -Number(updated.amount);
+      const customers = await this.getCustomers();
+      localStorage.setItem(
+        'hisaab_customers',
+        JSON.stringify(
+          customers.map(c =>
+            c.id === existing.customer_id
+              ? { ...c, current_balance: c.current_balance - oldDelta + newDelta, updated_at: new Date().toISOString() }
+              : c
+          )
+        )
+      );
+
+      return updated;
+    }
+    const res = await fetch(`${API_BASE_URL}/transactions/${id}`, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify(changes)
+    });
+    if (!res.ok) throw new Error('Failed to update transaction');
+    return res.json();
+  }
+
   // --- RECOVERY NUDGES ---
   async getNudges(): Promise<RecoveryNudge[]> {
     await this.ready;

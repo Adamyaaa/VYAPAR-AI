@@ -98,6 +98,13 @@ Creating a transaction automatically adjusts the customer's
 transaction record itself, not the updated customer; re-fetch the customer
 if you need the new balance.
 
+### `PATCH /transactions/:transactionId`
+Partial update — any of `amount`, `type`, `description`, `status` (at least
+one required). Deliberately does not support moving a transaction to a
+different `customer_id` (that's re-parenting financial history, not a quick
+edit). The balance trigger recalculates `current_balance` correctly for
+whatever changes. `404` if the transaction doesn't exist or isn't yours.
+
 ## Recovery nudges
 
 ### `GET /nudges/`

@@ -16,6 +16,17 @@ export const TransactionCreate = z.object({
 
 export type TransactionCreate = z.infer<typeof TransactionCreate>;
 
+export const TransactionUpdate = z
+  .object({
+    amount: money.optional(),
+    type: z.enum(['CREDIT', 'DEBIT']).optional(),
+    description: z.string().nullable().optional(),
+    status: z.enum(['PENDING', 'CONFIRMED']).optional(),
+  })
+  .refine((body) => Object.keys(body).length > 0, { message: 'At least one field must be provided' });
+
+export type TransactionUpdate = z.infer<typeof TransactionUpdate>;
+
 export interface TransactionRead {
   id: string;
   business_id: string;

@@ -7,7 +7,7 @@ import { AuthPage } from './features/auth/AuthPage';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { Customers } from './features/customers/Customers';
-import { Ledger } from './pages/Ledger';
+import { Ledger } from './features/ledger/Ledger';
 import { ComingSoon } from './pages/ComingSoon';
 
 function App() {

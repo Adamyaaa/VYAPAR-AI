@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { validateBody, validateQuery } from '../middleware/validate';
-import { TransactionCreate } from '../schemas/transaction.schema';
+import { TransactionCreate, TransactionUpdate } from '../schemas/transaction.schema';
 import { PaginationQuery } from '../schemas/pagination.schema';
 import { AppError } from '../utils/AppError';
 
@@ -57,5 +57,34 @@ transactionsRouter.post(
       return next(new AppError(502, `Failed to insert transaction into Supabase: ${error.message}`));
     }
     res.status(201).json(data);
+  }
+);
+
+// Deliberately does not allow moving a transaction to a different customer_id —
+// that's a re-parenting of financial history, not a "quick edit" of a typo or
+// status. The balance trigger (0002_customer_balance_trigger.sql) recalculates
+// current_balance correctly for whichever fields do change here.
+transactionsRouter.patch(
+  '/:transactionId',
+  requireAuth,
+  validateBody(TransactionUpdate),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { transactionId } = req.params;
+
+    const { data, error } = await req.userSupabase
+      .from('transactions')
+      .update(req.body)
+      .eq('id', transactionId)
+      .eq('business_id', req.userId)
+      .select()
+      .single();
+
+    // .single() errors when zero rows match, which — since business_id is
+    // filtered above — covers both "doesn't exist" and "not yours" the same
+    // way the nudges send-route already treats that ambiguity, for consistency.
+    if (error) {
+      return next(new AppError(404, 'Transaction not found or unauthorized'));
+    }
+    res.json(data);
   }
 );
