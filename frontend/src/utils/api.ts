@@ -154,13 +154,16 @@ if (!localStorage.getItem('hisaab_nudges')) {
 
 class ApiClient {
   private useMock = false;
+  // Gates every request until the first connectivity probe resolves, so a call
+  // fired immediately on page load can't race ahead of it and hit a dead
+  // backend instead of falling back to the mock (see: zeros-on-first-load bug).
+  private ready: Promise<void>;
 
   constructor() {
-    // Determine whether to use mock or backend
-    this.checkBackendConnection();
+    this.ready = this.checkBackendConnection();
   }
 
-  async checkBackendConnection() {
+  async checkBackendConnection(): Promise<void> {
     try {
       const res = await fetch(`${API_BASE_URL}/`, { method: 'GET', signal: AbortSignal.timeout(1500) });
       const data = await res.json();
@@ -189,6 +192,7 @@ class ApiClient {
 
   // --- CUSTOMERS ---
   async getCustomers(): Promise<Customer[]> {
+    await this.ready;
     if (this.useMock) {
       return JSON.parse(localStorage.getItem('hisaab_customers') || '[]');
     }
@@ -198,6 +202,7 @@ class ApiClient {
   }
 
   async createCustomer(customer: Omit<Customer, 'id' | 'business_id' | 'created_at' | 'updated_at'>): Promise<Customer> {
+    await this.ready;
     if (this.useMock) {
       const customers = await this.getCustomers();
       const newCustomer: Customer = {
@@ -222,6 +227,7 @@ class ApiClient {
 
   // --- TRANSACTIONS ---
   async getTransactions(): Promise<Transaction[]> {
+    await this.ready;
     if (this.useMock) {
       return JSON.parse(localStorage.getItem('hisaab_transactions') || '[]');
     }
@@ -231,6 +237,7 @@ class ApiClient {
   }
 
   async createTransaction(transaction: Omit<Transaction, 'id' | 'business_id' | 'created_at' | 'updated_at'>): Promise<Transaction> {
+    await this.ready;
     if (this.useMock) {
       const transactions = await this.getTransactions();
       const newTransaction: Transaction = {
@@ -267,6 +274,7 @@ class ApiClient {
 
   // --- RECOVERY NUDGES ---
   async getNudges(): Promise<RecoveryNudge[]> {
+    await this.ready;
     if (this.useMock) {
       return JSON.parse(localStorage.getItem('hisaab_nudges') || '[]');
     }
@@ -276,6 +284,7 @@ class ApiClient {
   }
 
   async createNudge(nudge: Omit<RecoveryNudge, 'id' | 'created_at' | 'updated_at'>): Promise<RecoveryNudge> {
+    await this.ready;
     if (this.useMock) {
       const nudges = await this.getNudges();
       const newNudge: RecoveryNudge = {
@@ -298,6 +307,7 @@ class ApiClient {
   }
 
   async sendNudge(nudgeId: string): Promise<RecoveryNudge> {
+    await this.ready;
     if (this.useMock) {
       const nudges = await this.getNudges();
       const updated = nudges.map(n => {

@@ -23,9 +23,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   }, [collapsed]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      api.checkBackendConnection().then(() => setIsOffline(api.isOffline));
-    }, 5000);
+    const sync = () => api.checkBackendConnection().then(() => setIsOffline(api.isOffline));
+    sync();
+    const interval = setInterval(sync, 5000);
     return () => clearInterval(interval);
   }, []);
 
