@@ -114,53 +114,6 @@ create trigger on_auth_user_created
   for each row
   execute function handle_new_user();
 
--- Keeps customers.current_balance in sync with transactions automatically —
--- see supabase/migrations/0002_customer_balance_trigger.sql for the full
--- rationale. Every insert/update/delete on transactions adjusts the affected
--- customer's balance by the correct delta.
-create or replace function apply_transaction_to_balance()
-  returns trigger
-  language plpgsql
-  security definer set search_path = public
-as $$
-begin
-  if (tg_op = 'INSERT') then
-    update customers
-    set current_balance = current_balance + (case when new.type = 'CREDIT' then new.amount else -new.amount end)
-    where id = new.customer_id;
-    return new;
-  elsif (tg_op = 'UPDATE') then
-    if (old.customer_id = new.customer_id) then
-      update customers
-      set current_balance = current_balance
-        - (case when old.type = 'CREDIT' then old.amount else -old.amount end)
-        + (case when new.type = 'CREDIT' then new.amount else -new.amount end)
-      where id = new.customer_id;
-    else
-      update customers
-      set current_balance = current_balance - (case when old.type = 'CREDIT' then old.amount else -old.amount end)
-      where id = old.customer_id;
-      update customers
-      set current_balance = current_balance + (case when new.type = 'CREDIT' then new.amount else -new.amount end)
-      where id = new.customer_id;
-    end if;
-    return new;
-  elsif (tg_op = 'DELETE') then
-    update customers
-    set current_balance = current_balance - (case when old.type = 'CREDIT' then old.amount else -old.amount end)
-    where id = old.customer_id;
-    return old;
-  end if;
-  return null;
-end;
-$$;
-
-drop trigger if exists transactions_apply_balance on transactions;
-create trigger transactions_apply_balance
-  after insert or update or delete on transactions
-  for each row
-  execute function apply_transaction_to_balance();
-
 alter table profiles enable row level security;
 alter table customers enable row level security;
 alter table transactions enable row level security;
