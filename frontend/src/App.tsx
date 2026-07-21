@@ -1,16 +1,29 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Settings, LifeBuoy } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { AuthPage } from './features/auth/AuthPage';
 import { AppShell } from './components/layout/AppShell';
-import { Dashboard } from './features/dashboard/Dashboard';
-import { Customers } from './features/customers/Customers';
-import { Ledger } from './features/ledger/Ledger';
-import { Reports } from './features/reports/Reports';
-import { Analytics } from './features/analytics/Analytics';
-import { ComingSoon } from './pages/ComingSoon';
+
+// Route-level code splitting: each page (several of which pull in Recharts
+// and/or Framer Motion) ships as its own chunk, loaded on navigation instead
+// of all up front.
+const Dashboard = lazy(() => import('./features/dashboard/Dashboard').then((m) => ({ default: m.Dashboard })));
+const Customers = lazy(() => import('./features/customers/Customers').then((m) => ({ default: m.Customers })));
+const Ledger = lazy(() => import('./features/ledger/Ledger').then((m) => ({ default: m.Ledger })));
+const Reports = lazy(() => import('./features/reports/Reports').then((m) => ({ default: m.Reports })));
+const Analytics = lazy(() => import('./features/analytics/Analytics').then((m) => ({ default: m.Analytics })));
+const Settings = lazy(() => import('./features/settings/Settings').then((m) => ({ default: m.Settings })));
+const Support = lazy(() => import('./features/support/Support').then((m) => ({ default: m.Support })));
+
+function PageFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <div className="animate-spin rounded-full h-7 w-7 border-2 border-border border-t-indigo" />
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -25,25 +38,17 @@ function App() {
               element={
                 <ProtectedRoute>
                   <AppShell>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/customers" element={<Customers />} />
-                      <Route path="/ledger" element={<Ledger />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/analytics" element={<Analytics />} />
-                      <Route
-                        path="/settings"
-                        element={
-                          <ComingSoon icon={Settings} title="Settings are on the way" description="Business profile, currency, and notification preferences will live here." />
-                        }
-                      />
-                      <Route
-                        path="/support"
-                        element={
-                          <ComingSoon icon={LifeBuoy} title="Support is on the way" description="Help articles and a way to reach the Hisaab AI team will live here." />
-                        }
-                      />
-                    </Routes>
+                    <Suspense fallback={<PageFallback />}>
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/customers" element={<Customers />} />
+                        <Route path="/ledger" element={<Ledger />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/analytics" element={<Analytics />} />
+                        <Route path="/settings" element={<Settings />} />
+                        <Route path="/support" element={<Support />} />
+                      </Routes>
+                    </Suspense>
                   </AppShell>
                 </ProtectedRoute>
               }

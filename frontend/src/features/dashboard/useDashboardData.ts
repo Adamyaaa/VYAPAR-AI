@@ -123,13 +123,19 @@ export function useDashboardData(): DashboardData {
       body: 'Highest outstanding balance on your ledger right now.',
     });
   }
+  // Day-level "how stale is this" math only needs to be roughly current — it
+  // naturally recomputes on every data reload, so a single render-time
+  // Date.now() read (not tracked as reactive state) is a deliberate,
+  // proportionate choice here rather than wiring up a ticking interval.
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
   const staleCustomer = customers.find((c) => {
     if (c.current_balance <= 0) return false;
-    const daysSinceUpdate = (Date.now() - new Date(c.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceUpdate = (now - new Date(c.updated_at).getTime()) / (1000 * 60 * 60 * 24);
     return daysSinceUpdate >= 7;
   });
   if (staleCustomer) {
-    const days = Math.floor((Date.now() - new Date(staleCustomer.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+    const days = Math.floor((now - new Date(staleCustomer.updated_at).getTime()) / (1000 * 60 * 60 * 24));
     suggestions.push({
       id: `stale-${staleCustomer.id}`,
       intent: 'warning',

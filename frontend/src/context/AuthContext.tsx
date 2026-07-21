@@ -6,6 +6,7 @@ import { api } from '../utils/api';
 interface Profile {
   business_name: string;
   phone_number: string | null;
+  currency: string;
 }
 
 interface AuthResult {
@@ -21,6 +22,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string, businessName: string, phoneNumber?: string) => Promise<AuthResult>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  updateProfile: (changes: Partial<Profile>) => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -54,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let cancelled = false;
     supabase
       .from('profiles')
-      .select('business_name, phone_number')
+      .select('business_name, phone_number, currency')
       .eq('id', session.user.id)
       .single()
       .then(({ data, error }) => {
@@ -93,9 +95,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
+  const updateProfile = async (changes: Partial<Profile>): Promise<AuthResult> => {
+    if (!session?.user) return { error: 'Not signed in' };
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(changes)
+      .eq('id', session.user.id)
+      .select('business_name, phone_number, currency')
+      .single();
+    if (error) return { error: error.message };
+    setProfile(data);
+    return { error: null };
+  };
+
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, profile, loading, signUp, signIn, signOut }}
+      value={{ session, user: session?.user ?? null, profile, loading, signUp, signIn, signOut, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

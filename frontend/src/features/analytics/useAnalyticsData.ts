@@ -47,14 +47,12 @@ export function useAnalyticsData() {
 
   const customerGrowth: GrowthPoint[] = useMemo(() => {
     const sorted = [...customers].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    let running = 0;
-    return sorted.map((c) => {
-      running += 1;
-      return {
-        label: new Date(c.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-        customers: running,
-      };
-    });
+    // Position in the sorted-by-signup-date array + 1 is the running count —
+    // no mutable accumulator needed.
+    return sorted.map((c, index) => ({
+      label: new Date(c.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+      customers: index + 1,
+    }));
   }, [customers]);
 
   const weeklyCashFlow: WeeklyCashFlowPoint[] = useMemo(() => {
