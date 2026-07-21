@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { FileText, BarChart3, Settings, LifeBuoy } from 'lucide-react';
+import { Settings, LifeBuoy } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
@@ -8,6 +8,8 @@ import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { Customers } from './features/customers/Customers';
 import { Ledger } from './features/ledger/Ledger';
+import { Reports } from './features/reports/Reports';
+import { Analytics } from './features/analytics/Analytics';
 import { ComingSoon } from './pages/ComingSoon';
 
 function App() {
@@ -27,18 +29,8 @@ function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/customers" element={<Customers />} />
                       <Route path="/ledger" element={<Ledger />} />
-                      <Route
-                        path="/reports"
-                        element={
-                          <ComingSoon icon={FileText} title="Reports are on the way" description="Month-end summaries and GST-ready reports will live here." />
-                        }
-                      />
-                      <Route
-                        path="/analytics"
-                        element={
-                          <ComingSoon icon={BarChart3} title="Analytics are on the way" description="Deeper customer and cash-flow analytics will live here." />
-                        }
-                      />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/analytics" element={<Analytics />} />
                       <Route
                         path="/settings"
                         element={
