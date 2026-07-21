@@ -6,3 +6,7 @@ export { AICard } from './AICard';
 export { Avatar } from './Avatar';
 export { Skeleton } from './Skeleton';
 export { EmptyState } from './EmptyState';
+export { Modal } from './Modal';
+export { SearchInput } from './SearchInput';
+export { FilterBar } from './FilterBar';
+export type { FilterOption } from './FilterBar';

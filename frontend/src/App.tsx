@@ -3,7 +3,7 @@ import { FileText, BarChart3, Settings, LifeBuoy } from 'lucide-react';
 import { ThemeProvider } from './context/ThemeContext';
 import { AppShell } from './components/layout/AppShell';
 import { Dashboard } from './features/dashboard/Dashboard';
-import { Customers } from './pages/Customers';
+import { Customers } from './features/customers/Customers';
 import { Ledger } from './pages/Ledger';
 import { ComingSoon } from './pages/ComingSoon';
 
