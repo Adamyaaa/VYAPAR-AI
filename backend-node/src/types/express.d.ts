@@ -1,7 +1,9 @@
 import 'express';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 declare module 'express-serve-static-core' {
   interface Request {
-    businessId: string;
+    userId: string;
+    userSupabase: SupabaseClient;
   }
 }

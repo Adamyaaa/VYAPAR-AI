@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { MobileNav } from './MobileNav';
 import { api } from '../../utils/api';
+import { useAuth } from '../../context/AuthContext';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -14,9 +15,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(api.isOffline);
+  const { profile, user, signOut } = useAuth();
 
-  // Placeholder until real Supabase Auth (Phase 1) replaces the current profile stub.
-  const businessName = 'Apna Bazaar';
+  const businessName = profile?.business_name || user?.email || 'Your business';
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
@@ -31,8 +32,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen flex bg-canvas">
-      <Sidebar businessName={businessName} collapsed={collapsed} onToggleCollapsed={() => setCollapsed((c) => !c)} />
-      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} businessName={businessName} />
+      <Sidebar
+        businessName={businessName}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((c) => !c)}
+        onSignOut={signOut}
+      />
+      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} businessName={businessName} onSignOut={signOut} />
 
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar businessName={businessName} isOffline={isOffline} onOpenMobileNav={() => setMobileNavOpen(true)} />

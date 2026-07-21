@@ -1,17 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { supabase } from '../lib/supabaseClient';
-import { requireBusinessId } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import { CustomerCreate } from '../schemas/customer.schema';
 import { AppError } from '../utils/AppError';
 
 export const customersRouter = Router();
 
-customersRouter.get('/', requireBusinessId, async (req: Request, res: Response, next: NextFunction) => {
-  const { data, error } = await supabase
+customersRouter.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  const { data, error } = await req.userSupabase
     .from('customers')
     .select('*')
-    .eq('business_id', req.businessId)
+    .eq('business_id', req.userId)
     .order('name');
 
   if (error) {
@@ -22,12 +21,12 @@ customersRouter.get('/', requireBusinessId, async (req: Request, res: Response, 
 
 customersRouter.post(
   '/',
-  requireBusinessId,
+  requireAuth,
   validateBody(CustomerCreate),
   async (req: Request, res: Response, next: NextFunction) => {
-    const record = { ...req.body, business_id: req.businessId };
+    const record = { ...req.body, business_id: req.userId };
 
-    const { data, error } = await supabase.from('customers').insert(record).select().single();
+    const { data, error } = await req.userSupabase.from('customers').insert(record).select().single();
 
     if (error) {
       return next(new AppError(502, `Failed to insert customer into Supabase: ${error.message}`));

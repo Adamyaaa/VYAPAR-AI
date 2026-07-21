@@ -1,17 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { supabase } from '../lib/supabaseClient';
-import { requireBusinessId } from '../middleware/auth';
+import { requireAuth } from '../middleware/auth';
 import { validateBody } from '../middleware/validate';
 import { TransactionCreate } from '../schemas/transaction.schema';
 import { AppError } from '../utils/AppError';
 
 export const transactionsRouter = Router();
 
-transactionsRouter.get('/', requireBusinessId, async (req: Request, res: Response, next: NextFunction) => {
-  const { data, error } = await supabase
+transactionsRouter.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  const { data, error } = await req.userSupabase
     .from('transactions')
     .select('*')
-    .eq('business_id', req.businessId)
+    .eq('business_id', req.userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -22,12 +21,28 @@ transactionsRouter.get('/', requireBusinessId, async (req: Request, res: Respons
 
 transactionsRouter.post(
   '/',
-  requireBusinessId,
+  requireAuth,
   validateBody(TransactionCreate),
   async (req: Request, res: Response, next: NextFunction) => {
-    const record = { ...req.body, business_id: req.businessId };
+    // Verify the customer belongs to this business before attaching a transaction
+    // to it — RLS on `transactions` only guarantees business_id is your own, it
+    // doesn't check that customer_id is (that's a separate table/relationship).
+    const { data: customer, error: customerError } = await req.userSupabase
+      .from('customers')
+      .select('business_id')
+      .eq('id', req.body.customer_id)
+      .single();
 
-    const { data, error } = await supabase.from('transactions').insert(record).select().single();
+    if (customerError) {
+      return next(new AppError(502, `Failed to verify customer in Supabase: ${customerError.message}`));
+    }
+    if (customer.business_id !== req.userId) {
+      return next(new AppError(403, 'Unauthorized: Customer does not belong to this business'));
+    }
+
+    const record = { ...req.body, business_id: req.userId };
+
+    const { data, error } = await req.userSupabase.from('transactions').insert(record).select().single();
 
     if (error) {
       return next(new AppError(502, `Failed to insert transaction into Supabase: ${error.message}`));

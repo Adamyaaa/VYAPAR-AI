@@ -11,6 +11,7 @@ import {
   LifeBuoy,
   ChevronsLeft,
   ChevronsRight,
+  LogOut,
 } from 'lucide-react';
 import { Avatar } from '../ui';
 
@@ -28,9 +29,10 @@ interface SidebarProps {
   businessName: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  onSignOut: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ businessName, collapsed, onToggleCollapsed }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ businessName, collapsed, onToggleCollapsed, onSignOut }) => {
   const location = useLocation();
 
   return (
@@ -83,11 +85,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ businessName, collapsed, onTog
         <div className={`flex items-center gap-2.5 px-1 mt-2 ${collapsed ? 'justify-center' : ''}`}>
           <Avatar name={businessName} size={32} />
           {!collapsed && (
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-[12.5px] font-semibold text-ink truncate m-0">{businessName}</p>
               <p className="text-[11px] text-ink-faint m-0">Owner account</p>
             </div>
           )}
+          <button
+            onClick={onSignOut}
+            title="Sign out"
+            className="p-1.5 rounded-md text-ink-faint hover:text-rose hover:bg-rose-soft transition-colors cursor-pointer shrink-0"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
     </motion.aside>

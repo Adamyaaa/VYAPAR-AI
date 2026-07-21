@@ -63,49 +63,87 @@ begin
 end;
 $$;
 
+drop trigger if exists profiles_set_updated_at on profiles;
 create trigger profiles_set_updated_at
   before update on profiles
   for each row
   execute function set_updated_at();
 
+drop trigger if exists customers_set_updated_at on customers;
 create trigger customers_set_updated_at
   before update on customers
   for each row
   execute function set_updated_at();
 
+drop trigger if exists transactions_set_updated_at on transactions;
 create trigger transactions_set_updated_at
   before update on transactions
   for each row
   execute function set_updated_at();
 
+drop trigger if exists recovery_nudges_set_updated_at on recovery_nudges;
 create trigger recovery_nudges_set_updated_at
   before update on recovery_nudges
   for each row
   execute function set_updated_at();
+
+-- Auto-provisions a profiles row the moment someone signs up via Supabase Auth,
+-- reading business_name/phone_number out of the signup call's user metadata
+-- (see supabase.auth.signUp({ options: { data: { business_name, phone_number } } })
+-- on the frontend). security definer lets it write to profiles despite RLS,
+-- since at signup time the new user has no session yet to act as themselves.
+create or replace function handle_new_user()
+  returns trigger
+  language plpgsql
+  security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, business_name, phone_number)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'business_name', 'My Business'),
+    new.raw_user_meta_data->>'phone_number'
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function handle_new_user();
 
 alter table profiles enable row level security;
 alter table customers enable row level security;
 alter table transactions enable row level security;
 alter table recovery_nudges enable row level security;
 
+drop policy if exists "Profiles: authenticated user can access own profile" on profiles;
 create policy "Profiles: authenticated user can access own profile"
   on profiles
   for all
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
+drop policy if exists "Customers: business owner can manage own customers" on customers;
 create policy "Customers: business owner can manage own customers"
   on customers
   for all
   using (business_id = auth.uid())
   with check (business_id = auth.uid());
 
+drop policy if exists "Transactions: business owner can manage own transactions" on transactions;
 create policy "Transactions: business owner can manage own transactions"
   on transactions
   for all
   using (business_id = auth.uid())
   with check (business_id = auth.uid());
 
+-- Note: RLS policy expressions reference the table's own columns directly
+-- (e.g. recovery_nudges.transaction_id) for both USING and WITH CHECK — NEW
+-- is a trigger-only pseudo-record and is not valid here.
+drop policy if exists "Recovery nudges: business owner can manage own nudges" on recovery_nudges;
 create policy "Recovery nudges: business owner can manage own nudges"
   on recovery_nudges
   for all
@@ -121,13 +159,13 @@ create policy "Recovery nudges: business owner can manage own nudges"
     exists (
       select 1
       from transactions
-      where transactions.id = new.transaction_id
+      where transactions.id = recovery_nudges.transaction_id
         and transactions.business_id = auth.uid()
     )
     and exists (
       select 1
       from customers
-      where customers.id = new.customer_id
+      where customers.id = recovery_nudges.customer_id
         and customers.business_id = auth.uid()
     )
   );

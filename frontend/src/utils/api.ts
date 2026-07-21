@@ -1,6 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-// A mock business ID to simulate an authenticated Supabase session
+// Used only to populate the offline/demo dataset below — has no relation to
+// any real Supabase Auth user id, just a stable id for the mock records to share.
 const MOCK_BUSINESS_ID = '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d';
 
 export interface Customer {
@@ -154,6 +155,7 @@ if (!localStorage.getItem('hisaab_nudges')) {
 
 class ApiClient {
   private useMock = false;
+  private accessToken: string | null = null;
   // Gates every request until the first connectivity probe resolves, so a call
   // fired immediately on page load can't race ahead of it and hit a dead
   // backend instead of falling back to the mock (see: zeros-on-first-load bug).
@@ -183,11 +185,16 @@ class ApiClient {
     return this.useMock;
   }
 
+  setAccessToken(token: string | null) {
+    this.accessToken = token;
+  }
+
   private getHeaders(): HeadersInit {
-    return {
-      'Content-Type': 'application/json',
-      'x-user-id': MOCK_BUSINESS_ID
-    };
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+    return headers;
   }
 
   // --- CUSTOMERS ---

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
 import { Avatar } from '../ui';
 import { MOBILE_NAV_ITEMS } from './Sidebar';
 
@@ -9,9 +9,10 @@ interface MobileNavProps {
   open: boolean;
   onClose: () => void;
   businessName: string;
+  onSignOut: () => void;
 }
 
-export const MobileNav: React.FC<MobileNavProps> = ({ open, onClose, businessName }) => {
+export const MobileNav: React.FC<MobileNavProps> = ({ open, onClose, businessName, onSignOut }) => {
   const location = useLocation();
 
   return (
@@ -66,10 +67,20 @@ export const MobileNav: React.FC<MobileNavProps> = ({ open, onClose, businessNam
 
             <div className="p-4 border-t border-border-soft flex items-center gap-3">
               <Avatar name={businessName} size={36} />
-              <div>
-                <p className="text-[13px] font-semibold text-ink m-0">{businessName}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold text-ink m-0 truncate">{businessName}</p>
                 <p className="text-[11px] text-ink-faint m-0">Owner account</p>
               </div>
+              <button
+                onClick={() => {
+                  onClose();
+                  onSignOut();
+                }}
+                title="Sign out"
+                className="p-1.5 rounded-md text-ink-faint hover:text-rose hover:bg-rose-soft transition-colors cursor-pointer shrink-0"
+              >
+                <LogOut size={16} />
+              </button>
             </div>
           </motion.nav>
         </motion.div>
